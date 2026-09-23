@@ -85,9 +85,15 @@ async def upload_document(file: UploadFile = File(...)):
     except HTTPException:
         path.unlink(missing_ok=True)
         raise
+    except ValueError as exc:
+        path.unlink(missing_ok=True)
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except HTTPException:
+        path.unlink(missing_ok=True)
+        raise
     except Exception as exc:
         path.unlink(missing_ok=True)
-        raise HTTPException(status_code=422, detail=f"Document processing failed: {exc}") from exc
+        raise HTTPException(status_code=422, detail=f"Document processing failed: {exc}") from exc 
     return UploadResponse(message="Document processed successfully.", document_id=document_id,
                           filename=file.filename, pages_processed=len(pages), chunks_created=len(chunks))
 
