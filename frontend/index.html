@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document Q&A Assistant</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header><p class="eyebrow">GROUNDED DOCUMENT SEARCH</p><h1>Ask your documents.</h1><p class="subtitle">Upload PDFs, then get answers tied to the pages that support them.</p></header>
+    <section class="panel">
+      <h2>1. Add a PDF</h2>
+      <form id="upload-form"><input id="pdf" type="file" accept="application/pdf" required><button>Process document</button></form>
+      <p id="upload-status" class="status">No document processed yet.</p>
+    </section>
+    <section class="panel">
+      <h2>2. Ask a question</h2>
+      <label for="document-select" class="label">Document scope</label>
+      <select id="document-select" class="document-select">
+        <option value="">All documents</option>
+      </select>
+      <form id="question-form"><textarea id="question" rows="4" placeholder="What does this document say about..." required></textarea><button>Ask Gemini</button></form>
+      <p id="question-status" class="status"></p>
+      <article id="answer" class="answer hidden"></article>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
