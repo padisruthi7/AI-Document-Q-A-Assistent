@@ -25,23 +25,42 @@ class GeminiService:
         )
         return response.embeddings[0].values
 
-    def answer(self, question: str, matches: list[dict]) -> str:
+    
+
+    def answer(
+        self, question: str, matches: list[dict], history: list[dict[str, str]] | None = None,) -> str:
+        history = history or []
         context = "\n\n".join(
             f"Source: {item['metadata']['filename']}, page {item['metadata']['page_number']}\n{item['text']}"
             for item in matches
         )
-        prompt = f"""You answer questions about uploaded documents.
-Use only the context below. If the answer is not supported by the context, say exactly:
-The uploaded documents do not contain enough information to answer this question.
-Do not use outside knowledge. Keep the answer concise and factual.
 
-Context:
+        conversation = "\n".join(
+    f"{message['role'].capitalize()}: {message['content']}"
+                for message in history
+                if message.get("role") in {"user", "assistant"} and message.get("content")
+        )
+
+        prompt = f"""You answer questions about uploaded documents.
+Use only the document context below to answer the current question.
+Conversation history is provided only to understand references to earlier questions or answers.
+Do not use outside knowledge.
+
+If the answer is not supported by the document context, say exactly:
+The uploaded documents do not contain enough information to answer this question.
+
+Keep the answer concise and factual.
+
+Conversation history:
+{conversation or "No previous conversation."}
+
+Document context:
 {context}
 
-Question: {question}
+Current question: {question}
 """
         response = self.client.models.generate_content(
-            model=GEMINI_GENERATION_MODEL,
-            contents=prompt,
-        )
+        model=GEMINI_GENERATION_MODEL,
+        contents=prompt,
+        ) 
         return response.text.strip()

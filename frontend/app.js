@@ -5,6 +5,8 @@ const questionStatus = document.querySelector('#question-status');
 const answerBox = document.querySelector('#answer');
 const documentSelect = document.querySelector('#document-select');
 
+let conversationHistory = [];``
+
 async function readResponse(response) {
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || 'Request failed.');
@@ -49,8 +51,9 @@ questionForm.addEventListener('submit', async (event) => {
   questionStatus.className = 'status';
   questionStatus.textContent = 'Searching and generating...';
   answerBox.className = 'answer hidden';
+  answerBox.textContent = '';
   try {
-    const payload = { question: document.querySelector('#question').value };
+    const payload = { question: document.querySelector('#question').value, history: conversationHistory };
     if (documentSelect.value) {
       payload.document_id = documentSelect.value;
     }
@@ -62,6 +65,15 @@ questionForm.addEventListener('submit', async (event) => {
     questionStatus.textContent = data.grounded ? 'Answer grounded in retrieved passages.' : 'No supporting passage was found.';
     answerBox.className = 'answer';
     answerBox.textContent = data.answer;
+    conversationHistory.push(
+      { role: 'user', content: payload.question },
+      { role: 'assistant', content: data.answer }
+    );
+    if (conversationHistory.length > 10)
+      {
+      conversationHistory = conversationHistory.slice(-10);
+    }
+
     if (data.sources.length) {
       const sources = document.createElement('div');
       sources.className = 'sources';

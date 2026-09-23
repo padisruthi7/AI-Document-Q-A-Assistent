@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.config import CHROMA_DIR, MAX_FILE_SIZE, RETRIEVAL_DISTANCE_THRESHOLD, UPLOAD_DIR
+from app.config import CHROMA_DIR, MAX_FILE_SIZE, RETRIEVAL_DISTANCE_THRESHOLD, RETRIEVAL_TOP_K, UPLOAD_DIR
 from app.schemas import AnswerResponse, QuestionRequest, Source, UploadResponse
 from app.services.documents import chunk_pages, extract_pages
 from app.services.gemini import GeminiService
@@ -88,9 +88,6 @@ async def upload_document(file: UploadFile = File(...)):
     except ValueError as exc:
         path.unlink(missing_ok=True)
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except HTTPException:
-        path.unlink(missing_ok=True)
-        raise
     except Exception as exc:
         path.unlink(missing_ok=True)
         raise HTTPException(status_code=422, detail=f"Document processing failed: {exc}") from exc 
@@ -107,7 +104,7 @@ def ask_question(request: QuestionRequest):
     try:
         matches = store.search(
             service.embed_query(question),
-            top_k=5,
+            top_k=RETRIEVAL_TOP_K,
             document_id=request.document_id,
         )
         matches = [
@@ -117,7 +114,10 @@ def ask_question(request: QuestionRequest):
         ]
         if not matches:
             return AnswerResponse(answer="The uploaded documents do not contain enough information to answer this question.", sources=[], grounded=False)
-        answer = service.answer(question, matches)
+        if request.history:
+            answer = service.answer(question, matches, request.history)
+        else:
+            answer = service.answer(question, matches)
     except HTTPException:
         raise
     except Exception as exc:

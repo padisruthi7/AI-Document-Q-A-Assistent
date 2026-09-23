@@ -95,3 +95,35 @@ def test_annual_revenue_regression_has_no_grounded_source(monkeypatch):
     assert response.status_code == 200
     assert response.json()["grounded"] is False
     assert response.json()["sources"] == []
+
+def test_conversation_history_is_passed_to_service(monkeypatch):
+    captured_history = None
+
+    class HistoryService:
+        def embed_query(self, question):
+            return [1.0, 0.0]
+
+        def answer(self, question, matches, history=None):
+            nonlocal captured_history
+            captured_history = history
+            return "Follow-up answer."
+
+    monkeypatch.setattr(main, "ai_service", lambda: HistoryService())
+    monkeypatch.setattr(main, "store", FakeStore([match()]))
+
+    history = [
+        {"role": "user", "content": "What are my technical skills?"},
+        {"role": "assistant", "content": "Python, Java, and Generative AI skills."},
+    ]
+
+    with TestClient(main.app) as client:
+        response = client.post(
+            "/api/questions",
+            json={
+                "question": "Which of these are related to Generative AI?",
+                "history": history,
+            },
+        )
+
+    assert response.status_code == 200
+    assert captured_history == history
