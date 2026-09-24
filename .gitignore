@@ -7,7 +7,9 @@ __pycache__/
 # Virtual environment
 venv/
 .venv/
-
+venv-py312-broken/
+venv-py312-retry/
+venv-py314-backup/
 # Secrets and local configuration
 .env
 
